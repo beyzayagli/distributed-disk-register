@@ -135,7 +135,7 @@
 
   * Tolerance=2, 4 üye
   * Mesaj id 500 → üye 3 ve 4’te kayıtlı olsun
-  * Üye 3’ü öldür → lider GET 500 isteğini üye 4’ten çekebiliyor mu?
+  * Üye 3’ü kapat → lider GET 500 isteğini üye 4’ten çekebiliyor mu?
 * [ ] Test 2:
 
   * Tolerance=3, 6 üye
