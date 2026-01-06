@@ -92,7 +92,19 @@ private static void handleClientTextConnection(Socket client,
             String text = line.trim();
             if (text.isEmpty()) continue;
 
+            Object cmd = CommandParser.parse(text);
+            
+            if (cmd instanceof SetCommand) {
+                SetCommand setCmd = (SetCommand) cmd;
+                System.out.println("SET yapıldı: " + setCmd.key + " = " + setCmd.value);
+            } else if (cmd instanceof GetCommand) {
+                GetCommand getCmd = (GetCommand) cmd;
+                System.out.println("GET yapıldı: " + getCmd.key);
+            }
+            
+
             long ts = System.currentTimeMillis();
+        
 
             // Kendi üstüne de yaz
             System.out.println("📝 Received from TCP: " + text);
