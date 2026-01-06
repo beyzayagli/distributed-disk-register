@@ -1,25 +1,25 @@
 package com.example.family;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import family.ChatMessage;
 import family.Empty;
 import family.FamilyServiceGrpc;
 import family.FamilyView;
 import family.NodeInfo;
-import family.ChatMessage;
-
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.Socket;
-
-
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.concurrent.*;
 
 public class NodeMain {
 
@@ -85,7 +85,8 @@ private static void handleClientTextConnection(Socket client,
                                                NodeInfo self) {
     System.out.println("New TCP client connected: " + client.getRemoteSocketAddress());
     try (BufferedReader reader = new BufferedReader(
-            new InputStreamReader(client.getInputStream()))) {
+            new InputStreamReader(client.getInputStream()));
+         java.io.PrintWriter writer = new java.io.PrintWriter(client.getOutputStream(), true)) {
 
         String line;
         while ((line = reader.readLine()) != null) {
@@ -93,18 +94,25 @@ private static void handleClientTextConnection(Socket client,
             if (text.isEmpty()) continue;
 
             Object cmd = CommandParser.parse(text);
+            String response = null;
             
             if (cmd instanceof SetCommand) {
                 SetCommand setCmd = (SetCommand) cmd;
+                response = setCmd.execute();
                 System.out.println("SET yapıldı: " + setCmd.key + " = " + setCmd.value);
             } else if (cmd instanceof GetCommand) {
                 GetCommand getCmd = (GetCommand) cmd;
+                response = getCmd.execute();
                 System.out.println("GET yapıldı: " + getCmd.key);
             }
             
+            // İstemciye response gönder
+            if (response != null) {
+                writer.println(response);
+                System.out.println("Response gönderildi: " + response);
+            }
 
             long ts = System.currentTimeMillis();
-        
 
             // Kendi üstüne de yaz
             System.out.println("📝 Received from TCP: " + text);

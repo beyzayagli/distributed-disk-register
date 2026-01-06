@@ -1,5 +1,8 @@
 package com.example.family;
 
+import java.util.HashMap;
+import java.util.Map;
+
 class SetCommand {
     public String key;
     public String value;
@@ -7,6 +10,11 @@ class SetCommand {
     public SetCommand(String key, String value) {
         this.key = key;
         this.value = value;
+    }
+    
+    public String execute() {
+        CommandParser.messages.put(key, value);
+        return "OK";
     }
 }
 
@@ -16,9 +24,21 @@ class GetCommand {
     public GetCommand(String key) {
         this.key = key;
     }
+    
+    public String execute() {
+        String value = CommandParser.messages.get(key);
+        if (value != null) {
+            return value;
+        } else {
+            return "NOT_FOUND";
+        }
+    }
 }
 
 public class CommandParser {
+    // Mesajları burada tutuyoruz
+    public static Map<String, String> messages = new HashMap<>();
+    
     public static Object parse(String line) {
         String[] parts = line.split(" ");
         
