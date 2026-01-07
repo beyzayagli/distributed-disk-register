@@ -29,9 +29,23 @@ message StoredMessage {
   string text = 2;
 }
 
+message StoreResult {
+  bool success = 1;
+  string message = 2;
+}
+
+message MessageId {
+  int32 id = 1;
+}
+
 service FamilyService {
   rpc Join (NodeInfo) returns (FamilyView);
   rpc GetFamily (Empty) returns (FamilyView);
 
   rpc ReceiveChat (ChatMessage) returns (Empty);
+}
+
+service StorageService {
+  rpc Store (StoredMessage) returns (StoreResult);
+  rpc Retrieve (MessageId) returns (StoredMessage);
 }
