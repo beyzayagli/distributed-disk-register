@@ -1,6 +1,8 @@
 package com.example.family;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 class SetCommand {
@@ -31,7 +33,18 @@ class SetCommand {
                         .build();
                 
                 // gRPC channel açılacak
-                System.out.println("gRPC'ye gönderilecek: id=" + id + ", text=" + value);
+                int tolerance = ToleranceConfig.getTolerance();
+                List<family.NodeInfo> members = CommandParser.getMembers();
+                
+                if (members.size() > 0) {
+                    int replicaCount = Math.min(tolerance, members.size());
+                    System.out.println("Mesaj " + id + " için " + replicaCount + " üyeye gönderiliyor");
+                    
+                    for (int i = 0; i < replicaCount; i++) {
+                        family.NodeInfo member = members.get(i);
+                        System.out.println("Gönderiliyor: " + member.getHost() + ":" + member.getPort());
+                    }
+                }
             } catch (Exception e) {
                 System.out.println("gRPC hatası: " + e.getMessage());
             }
@@ -79,7 +92,16 @@ class GetCommand {
 public class CommandParser {
     // Mesajları burada tutuyoruz
     public static Map<String, String> messages = new HashMap<>();
+    private static List<family.NodeInfo> members = new ArrayList<>();
     
+    public static void setMembers(List<family.NodeInfo> memberList) {
+        members = memberList;
+    }
+    
+    public static List<family.NodeInfo> getMembers() {
+        return members;
+    }
+
     public static Object parse(String line) {
         String[] parts = line.split(" ");
         
