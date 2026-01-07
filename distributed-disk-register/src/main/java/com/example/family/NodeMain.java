@@ -52,6 +52,7 @@ public class NodeMain {
                 }
 
                 discoverExistingNodes(host, port, registry, self);
+                CommandParser.setMembers(registry.snapshot());
                 startFamilyPrinter(registry, self);
                 startHealthChecker(registry, self);
 
