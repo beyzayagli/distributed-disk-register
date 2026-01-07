@@ -1,6 +1,5 @@
 package com.example.family;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,15 +14,26 @@ class SetCommand {
     
     public String execute() {
         try{
-            //messages klasoru yoksa olustur
-            File dir = new File("messages");
+            // Dosyaya yaz
+            java.io.File dir = new java.io.File("messages");
             if (!dir.exists()){
                 dir.mkdir();
             }
-
-            //Dosyaya yaz
             try (java.io.FileWriter fw = new java.io.FileWriter("messages/" + key + ".msg")){
                 fw.write(value);
+            }
+            // gRPC ile de gönder
+            try {
+                int id = Integer.parseInt(key);
+                family.StoredMessage msg = family.StoredMessage.newBuilder()
+                        .setId(id)
+                        .setText(value)
+                        .build();
+                
+                // gRPC channel açılacak
+                System.out.println("gRPC'ye gönderilecek: id=" + id + ", text=" + value);
+            } catch (Exception e) {
+                System.out.println("gRPC hatası: " + e.getMessage());
             }
 
             //RAM'e de koy
