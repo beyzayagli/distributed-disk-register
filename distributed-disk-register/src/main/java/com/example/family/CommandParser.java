@@ -60,6 +60,9 @@ class SetCommand {
                             } else {
                                 System.out.println("Başarısız: " + result.getMessage());
                             }
+
+                            channel.shutdownNow();
+
                             
                         } catch (Exception ex) {
                             System.out.println("gRPC hatası: " + ex.getMessage());
