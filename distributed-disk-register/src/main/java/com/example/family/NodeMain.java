@@ -116,20 +116,6 @@ private static void handleClientTextConnection(Socket client,
                 System.out.println("Response gönderildi: " + response);
             }
 
-            long ts = System.currentTimeMillis();
-
-            // Kendi üstüne de yaz
-            System.out.println("📝 Received from TCP: " + text);
-
-            ChatMessage msg = ChatMessage.newBuilder()
-                    .setText(text)
-                    .setFromHost(self.getHost())
-                    .setFromPort(self.getPort())
-                    .setTimestamp(ts)
-                    .build();
-
-            // Tüm family üyelerine broadcast et
-            broadcastToFamily(registry, self, msg);
         }
 
     } catch (IOException e) {
