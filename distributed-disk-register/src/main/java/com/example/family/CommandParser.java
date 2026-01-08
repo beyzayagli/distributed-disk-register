@@ -32,7 +32,6 @@ class SetCommand {
                         .setText(value)
                         .build();
                 
-                // gRPC channel açılacak
                 int tolerance = ToleranceConfig.getTolerance();
                 List<family.NodeInfo> members = CommandParser.getMembers();
                 
@@ -43,6 +42,28 @@ class SetCommand {
                     for (int i = 0; i < replicaCount; i++) {
                         family.NodeInfo member = members.get(i);
                         System.out.println("Gönderiliyor: " + member.getHost() + ":" + member.getPort());
+
+                          
+                        try {
+                            io.grpc.ManagedChannel channel = io.grpc.ManagedChannelBuilder
+                                    .forAddress(member.getHost(), member.getPort())
+                                    .usePlaintext()
+                                    .build();
+                            
+                            family.StorageServiceGrpc.StorageServiceBlockingStub stub = 
+                                    family.StorageServiceGrpc.newBlockingStub(channel);
+                            
+                            family.StoreResult result = stub.store(msg);
+                            
+                            if (result.getSuccess()) {
+                                System.out.println("Başarılı: " + member.getHost() + ":" + member.getPort());
+                            } else {
+                                System.out.println("Başarısız: " + result.getMessage());
+                            }
+                            
+                        } catch (Exception ex) {
+                            System.out.println("gRPC hatası: " + ex.getMessage());
+                        }
                     }
                 }
             } catch (Exception e) {
