@@ -97,6 +97,7 @@ class GetCommand {
             try (java.io.BufferedReader br = new java.io.BufferedReader( new java.io.FileReader("messages/" + key + ".msg"))) {
                 String content = br.readLine();
                 if (content != null){
+                    System.out.println("Mesaj diskten bulundu: " + key);
                     return content;
                 }
             }
@@ -107,9 +108,41 @@ class GetCommand {
         String value = CommandParser.messages.get(key);
         if (value != null) {
             return value;
-        } else {
-            return "NOT_FOUND";
         }
+
+        // Üyelerden gRPC ile oku
+        List<family.NodeInfo> members = CommandParser.getMembers();
+        for (family.NodeInfo member : members) {
+            try {
+                int id = Integer.parseInt(key);
+                family.MessageId msgId = family.MessageId.newBuilder()
+                        .setId(id)
+                        .build();
+                
+                io.grpc.ManagedChannel channel = io.grpc.ManagedChannelBuilder
+                        .forAddress(member.getHost(), member.getPort())
+                        .usePlaintext()
+                        .build();
+                
+                family.StorageServiceGrpc.StorageServiceBlockingStub stub = 
+                        family.StorageServiceGrpc.newBlockingStub(channel);
+                
+                family.StoredMessage result = stub.retrieve(msgId);
+                
+                if (result != null && !result.getText().isEmpty()) {
+                    System.out.println("Mesaj üyeden bulundu: " + member.getHost() + ":" + member.getPort());
+                    channel.shutdownNow();
+                    return result.getText();
+                }
+                
+                channel.shutdownNow();
+                
+            } catch (Exception ex) {
+                System.out.println("Üye erişim hatası: " + ex.getMessage());
+            }
+        }
+        
+        return "NOT_FOUND";
     }
 }
 
