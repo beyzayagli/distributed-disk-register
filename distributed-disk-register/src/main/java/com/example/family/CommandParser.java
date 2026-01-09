@@ -110,13 +110,14 @@ class GetCommand {
             if (member.getPort() == CommandParser.getSelfPort()) {
                 continue;
             }
+            io.grpc.ManagedChannel channel = null;
             try {
                 int id = Integer.parseInt(key);
                 family.MessageId msgId = family.MessageId.newBuilder()
                         .setId(id)
                         .build();
                 
-                io.grpc.ManagedChannel channel = io.grpc.ManagedChannelBuilder
+                channel = io.grpc.ManagedChannelBuilder
                         .forAddress(member.getHost(), member.getPort())
                         .usePlaintext()
                         .build();
@@ -128,14 +129,14 @@ class GetCommand {
                 
                 if (result != null && !result.getText().isEmpty()) {
                     System.out.println("Mesaj üyeden bulundu: " + member.getHost() + ":" + member.getPort());
-                    channel.shutdownNow();
                     return result.getText();
-                }
-                
-                channel.shutdownNow();
-                
+                }                
             } catch (Exception ex) {
                 System.out.println("Üye erişim hatası: " + ex.getMessage());
+            } finally {
+                if (channel != null) {
+                    channel.shutdownNow();
+                }
             }
         }
         

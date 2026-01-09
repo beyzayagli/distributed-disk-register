@@ -68,18 +68,19 @@ public class StorageServiceImpl extends StorageServiceGrpc.StorageServiceImplBas
             System.out.println("RETRIEVE " + request.getId() + ".msg");
 
             
-            if (content != null) {
-                StoredMessage msg = StoredMessage.newBuilder()
-                        .setId(request.getId())
-                        .setText(content)
-                        .build();
-                responseObserver.onNext(msg);
-            }
-            
+            StoredMessage msg = StoredMessage.newBuilder()
+                    .setId(request.getId())
+                    .setText(content != null ? content : "")
+                    .build();
+            responseObserver.onNext(msg);
             responseObserver.onCompleted();
             
         } catch (Exception e) {
-            System.out.println("Retrieve hatası: " + e.getMessage());
+            StoredMessage msg = StoredMessage.newBuilder()
+                    .setId(request.getId())
+                    .setText("")
+                    .build();
+            responseObserver.onNext(msg);
             responseObserver.onCompleted();
         }
     }
