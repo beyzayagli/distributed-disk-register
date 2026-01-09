@@ -37,7 +37,7 @@ public class NodeMain {
 
         NodeRegistry registry = new NodeRegistry();
         FamilyServiceImpl service = new FamilyServiceImpl(registry, self);
-        StorageServiceImpl storageService = new StorageServiceImpl();
+        StorageServiceImpl storageService = new StorageServiceImpl(port);
 
         Server server = ServerBuilder
                 .forPort(port)
