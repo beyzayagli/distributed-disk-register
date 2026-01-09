@@ -33,14 +33,12 @@ class SetCommand {
                         .build();
                 
                 int tolerance = ToleranceConfig.getTolerance();
-                List<family.NodeInfo> members = CommandParser.getMembers();
+                List<family.NodeInfo> selected = CommandParser.selectMembers(tolerance);
                 
-                if (members.size() > 0) {
-                    int replicaCount = Math.min(tolerance, members.size());
-                    System.out.println("Mesaj " + id + " için " + replicaCount + " üyeye gönderiliyor");
+                if (selected.size() > 0) {
+                    System.out.println("Mesaj " + id + " için " + selected.size() + " üyeye gönderiliyor");
                     
-                    for (int i = 0; i < replicaCount; i++) {
-                        family.NodeInfo member = members.get(i);
+                    for (family.NodeInfo member : selected) {
                         System.out.println("Gönderiliyor: " + member.getHost() + ":" + member.getPort());
 
                           
@@ -152,6 +150,7 @@ public class CommandParser {
     public static Map<String, String> messages = new HashMap<>();
     private static List<family.NodeInfo> members = new ArrayList<>();
     private static Map<Integer, List<String>> messageLocations = new HashMap<>();
+    private static int roundRobinIndex = 0;
 
     public static void setMembers(List<family.NodeInfo> memberList) {
         members = memberList;
@@ -167,6 +166,18 @@ public class CommandParser {
     
     public static List<String> getMessageLocations(int messageId) {
         return messageLocations.getOrDefault(messageId, new ArrayList<>());
+    }
+
+    public static List<family.NodeInfo> selectMembers(int count) {
+        List<family.NodeInfo> selected = new ArrayList<>();
+        if (members.size() == 0) return selected;
+        
+        for (int i = 0; i < count && i < members.size(); i++) {
+            int idx = (roundRobinIndex + i) % members.size();
+            selected.add(members.get(idx));
+        }
+        roundRobinIndex = (roundRobinIndex + count) % members.size();
+        return selected;
     }
 
     public static Object parse(String line) {
