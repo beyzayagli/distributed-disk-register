@@ -57,6 +57,7 @@ class SetCommand {
                             
                             if (result.getSuccess()) {
                                 System.out.println("Başarılı: " + member.getHost() + ":" + member.getPort());
+                                CommandParser.addMessageLocation(id, member.getHost() + ":" + member.getPort());
                             } else {
                                 System.out.println("Başarısız: " + result.getMessage());
                             }
@@ -150,13 +151,22 @@ public class CommandParser {
     // Mesajları burada tutuyoruz
     public static Map<String, String> messages = new HashMap<>();
     private static List<family.NodeInfo> members = new ArrayList<>();
-    
+    private static Map<Integer, List<String>> messageLocations = new HashMap<>();
+
     public static void setMembers(List<family.NodeInfo> memberList) {
         members = memberList;
     }
     
     public static List<family.NodeInfo> getMembers() {
         return members;
+    }
+
+    public static void addMessageLocation(int messageId, String location) {
+        messageLocations.computeIfAbsent(messageId, k -> new ArrayList<>()).add(location);
+    }
+    
+    public static List<String> getMessageLocations(int messageId) {
+        return messageLocations.getOrDefault(messageId, new ArrayList<>());
     }
 
     public static Object parse(String line) {
