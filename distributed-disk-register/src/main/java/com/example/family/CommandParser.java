@@ -17,13 +17,13 @@ class SetCommand {
     public String execute() {
         try{
             // Dosyaya yaz
-            java.io.File dir = new java.io.File("messages");
-            if (!dir.exists()){
-                dir.mkdir();
-            }
-            try (java.io.FileWriter fw = new java.io.FileWriter("messages/" + key + ".msg")){
+            int port = CommandParser.getSelfPort();
+            try (java.io.FileWriter fw = new java.io.FileWriter("messages_" + port + "/" + key + ".msg")) {
                 fw.write(value);
             }
+            CommandParser.incrementLocalMessageCount();
+            System.out.println(key + ".msg kaydedildi [toplam: " + CommandParser.getLocalMessageCount() + "]");
+
             // gRPC ile de gönder
             try {
                 int id = Integer.parseInt(key);
@@ -72,8 +72,6 @@ class SetCommand {
                 System.out.println("gRPC hatası: " + e.getMessage());
             }
 
-            //RAM'e de koy
-            CommandParser.messages.put(key, value);
             return "OK";
         }catch (Exception e){
             System.out.println("SET hatasi: " + e.getMessage());
@@ -93,7 +91,9 @@ class GetCommand {
     public String execute() {
         try{
             //once diskten oku
-            try (java.io.BufferedReader br = new java.io.BufferedReader( new java.io.FileReader("messages/" + key + ".msg"))) {
+            int port = CommandParser.getSelfPort();
+            try (java.io.BufferedReader br = new java.io.BufferedReader( 
+                new java.io.FileReader("messages_" + port + "/" + key + ".msg"))) {
                 String content = br.readLine();
                 if (content != null){
                     System.out.println("Mesaj diskten bulundu: " + key);
@@ -101,17 +101,15 @@ class GetCommand {
                 }
             }
         }catch (Exception e) {
-            //dosya yoksa RAM'den oku
-        }
-
-        String value = CommandParser.messages.get(key);
-        if (value != null) {
-            return value;
+            //dosya yoksa üyelerden dene
         }
 
         // Üyelerden gRPC ile oku
         List<family.NodeInfo> members = CommandParser.getMembers();
         for (family.NodeInfo member : members) {
+            if (member.getPort() == CommandParser.getSelfPort()) {
+                continue;
+            }
             try {
                 int id = Integer.parseInt(key);
                 family.MessageId msgId = family.MessageId.newBuilder()
@@ -151,12 +149,43 @@ public class CommandParser {
     private static List<family.NodeInfo> members = new ArrayList<>();
     private static Map<Integer, List<String>> messageLocations = new HashMap<>();
     private static int roundRobinIndex = 0;
+    private static NodeRegistry registry = null;
+    private static int selfPort = 5555;
+    private static int localMessageCount = 0;
+    
+    public static void setSelfPort(int port) {
+        selfPort = port;
+        java.io.File dir = new java.io.File("messages_" + port);
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+    }
+    
+    public static int getSelfPort() {
+        return selfPort;
+    }
+    
+    public static void incrementLocalMessageCount() {
+        localMessageCount++;
+    }
+    
+    public static int getLocalMessageCount() {
+        return localMessageCount;
+    }
+    
+    public static void setRegistry(NodeRegistry reg) {
+        registry = reg;
+    }
 
     public static void setMembers(List<family.NodeInfo> memberList) {
         members = memberList;
     }
     
     public static List<family.NodeInfo> getMembers() {
+        if (registry != null) {
+            return registry.snapshot();
+        }
+
         return members;
     }
 
@@ -170,15 +199,37 @@ public class CommandParser {
 
     public static List<family.NodeInfo> selectMembers(int count) {
         List<family.NodeInfo> selected = new ArrayList<>();
-        if (members.size() == 0) return selected;
+        List<family.NodeInfo> currentMembers = getMembers();
         
-        for (int i = 0; i < count && i < members.size(); i++) {
-            int idx = (roundRobinIndex + i) % members.size();
-            selected.add(members.get(idx));
+        // Kendimizi hariç tut
+        List<family.NodeInfo> others = new ArrayList<>();
+        for (family.NodeInfo m : currentMembers) {
+            if (m.getPort() != selfPort) {
+                others.add(m);
+            }
         }
-        roundRobinIndex = (roundRobinIndex + count) % members.size();
+        
+        if (others.size() == 0) return selected;
+        
+        for (int i = 0; i < count && i < others.size(); i++) {
+            int idx = (roundRobinIndex + i) % others.size();
+            selected.add(others.get(idx));
+        }
+
+        roundRobinIndex = (roundRobinIndex + count) % Math.max(1, others.size());
         return selected;
     }
+
+    public static Map<String, Integer> getMessageDistribution() {
+        Map<String, Integer> distribution = new HashMap<>();
+        for (List<String> locations : messageLocations.values()) {
+            for (String loc : locations) {
+                distribution.merge(loc, 1, Integer::sum);
+            }
+        }
+        return distribution;
+    }
+
 
     public static Object parse(String line) {
         String[] parts = line.split(" ");

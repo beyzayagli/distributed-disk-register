@@ -7,6 +7,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -55,8 +56,9 @@ public class NodeMain {
                 }
 
                 discoverExistingNodes(host, port, registry, self);
-                CommandParser.setMembers(registry.snapshot());
-                startFamilyPrinter(registry, self);
+                CommandParser.setRegistry(registry);
+                CommandParser.setSelfPort(port);
+                startFamilyPrinter(registry, self, storageService);
                 startHealthChecker(registry, self);
 
                 server.awaitTermination();
@@ -201,8 +203,9 @@ private static void broadcastToFamily(NodeRegistry registry,
         }
     }
 
-    private static void startFamilyPrinter(NodeRegistry registry, NodeInfo self) {
+    private static void startFamilyPrinter(NodeRegistry registry, NodeInfo self, StorageServiceImpl storageService) {
         ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+        boolean isLeader = self.getPort() == START_PORT;
 
         scheduler.scheduleAtFixedRate(() -> {
             List<NodeInfo> members = registry.snapshot();
@@ -211,13 +214,32 @@ private static void broadcastToFamily(NodeRegistry registry,
             System.out.println("Time: " + LocalDateTime.now());
             System.out.println("Members:");
 
+            Map<String, Integer> distribution = CommandParser.getMessageDistribution();
+
+
             for (NodeInfo n : members) {
                 boolean isMe = n.getHost().equals(self.getHost()) && n.getPort() == self.getPort();
-                System.out.printf(" - %s:%d%s%n",
-                        n.getHost(),
-                        n.getPort(),
-                        isMe ? " (me)" : "");
+                String key = n.getHost() + ":" + n.getPort();
+                int msgCount = distribution.getOrDefault(key, 0);
+                
+                if (isLeader && !isMe) {
+                    System.out.printf(" - %s:%d [%d msg]%n", n.getHost(), n.getPort(), msgCount);
+                } else {
+                    System.out.printf(" - %s:%d%s%n", n.getHost(), n.getPort(), isMe ? " (me)" : "");
+                }
             }
+            
+            int localMsgCount = isLeader ? CommandParser.getLocalMessageCount() : storageService.getMessageCount();
+            System.out.println("Local messages: " + localMsgCount);
+            
+            if (isLeader) {
+                int total = 0;
+                for (int count : distribution.values()) {
+                    total += count;
+                }
+                System.out.println("Total tracked: " + total);
+            }
+            
             System.out.println("======================================");
         }, 3, PRINT_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
