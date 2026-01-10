@@ -28,9 +28,18 @@ public class StorageServiceImpl extends StorageServiceGrpc.StorageServiceImplBas
         try {
             // Dosyaya yaz
             String filename = "messages_" + port + "/" + request.getId() + ".msg";
-            java.io.FileWriter fw = new java.io.FileWriter(filename);
-            fw.write(request.getText());
-            fw.close();
+            String ioMode = ToleranceConfig.getIoMode();
+            
+            if (ioMode.equals("UNBUFFERED")) {
+                java.io.FileOutputStream fos = new java.io.FileOutputStream(filename);
+                fos.write(request.getText().getBytes());
+                fos.close();
+            } else {
+                // BUFFERED (default)
+                java.io.FileWriter fw = new java.io.FileWriter(filename);
+                fw.write(request.getText());
+                fw.close();
+            }
             
             // Response gönder
             messageCount++;
@@ -60,10 +69,21 @@ public class StorageServiceImpl extends StorageServiceGrpc.StorageServiceImplBas
         try {
             // Dosyadan oku
             String filename = "messages_" + port + "/" + request.getId() + ".msg";
+            String ioMode = ToleranceConfig.getIoMode();
+            String content = null;
+            
+            if (ioMode.equals("UNBUFFERED")) {
+                java.io.FileInputStream fis = new java.io.FileInputStream(filename);
+                byte[] data = fis.readAllBytes();
+                fis.close();
+                content = new String(data);
+            } else {
+                // BUFFERED (default)
             java.io.BufferedReader br = new java.io.BufferedReader(
                     new java.io.FileReader(filename));
-            String content = br.readLine();
-            br.close();
+                content = br.readLine();
+                br.close();
+            }
 
             System.out.println("RETRIEVE " + request.getId() + ".msg");
 

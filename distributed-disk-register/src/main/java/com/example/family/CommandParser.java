@@ -18,8 +18,18 @@ class SetCommand {
         try{
             // Dosyaya yaz
             int port = CommandParser.getSelfPort();
-            try (java.io.FileWriter fw = new java.io.FileWriter("messages_" + port + "/" + key + ".msg")) {
+            String filename = "messages_" + port + "/" + key + ".msg";
+            String ioMode = ToleranceConfig.getIoMode();
+            
+            if (ioMode.equals("UNBUFFERED")) {
+                java.io.FileOutputStream fos = new java.io.FileOutputStream(filename);
+                fos.write(value.getBytes());
+                fos.close();
+            } else {
+                // BUFFERED (default)
+                java.io.FileWriter fw = new java.io.FileWriter(filename);
                 fw.write(value);
+                fw.close();
             }
             CommandParser.incrementLocalMessageCount();
             System.out.println(key + ".msg kaydedildi [toplam: " + CommandParser.getLocalMessageCount() + "]");
@@ -90,16 +100,30 @@ class GetCommand {
     
     public String execute() {
         int port = CommandParser.getSelfPort();
+        String filename = "messages_" + port + "/" + key + ".msg";
+        String ioMode = ToleranceConfig.getIoMode();
+
 
         try{
             //once diskten oku
-            try (java.io.BufferedReader br = new java.io.BufferedReader( 
-                new java.io.FileReader("messages_" + port + "/" + key + ".msg"))) {
-                String content = br.readLine();
-                if (content != null){
-                    System.out.println("GET " + key + " -> LOCAL (messages_" + port + "/" + key + ".msg)");
-                    return content;
-                }
+            String content = null;
+            
+            if (ioMode.equals("UNBUFFERED")) {
+                java.io.FileInputStream fis = new java.io.FileInputStream(filename);
+                byte[] data = fis.readAllBytes();
+                fis.close();
+                content = new String(data);
+            } else {
+                // BUFFERED (default)
+                java.io.BufferedReader br = new java.io.BufferedReader(
+                        new java.io.FileReader(filename));
+                content = br.readLine();
+                br.close();
+            }
+            
+            if (content != null && !content.isEmpty()) {
+                System.out.println("GET " + key + " -> LOCAL (" + filename + ")");
+                return content;
             }
         }catch (Exception e) {
             //dosya yoksa üyelerden dene
