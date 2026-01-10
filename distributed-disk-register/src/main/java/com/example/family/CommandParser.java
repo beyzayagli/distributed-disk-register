@@ -89,14 +89,15 @@ class GetCommand {
     }
     
     public String execute() {
+        int port = CommandParser.getSelfPort();
+
         try{
             //once diskten oku
-            int port = CommandParser.getSelfPort();
             try (java.io.BufferedReader br = new java.io.BufferedReader( 
                 new java.io.FileReader("messages_" + port + "/" + key + ".msg"))) {
                 String content = br.readLine();
                 if (content != null){
-                    System.out.println("Mesaj diskten bulundu: " + key);
+                    System.out.println("GET " + key + " -> LOCAL (messages_" + port + "/" + key + ".msg)");
                     return content;
                 }
             }
@@ -108,7 +109,8 @@ class GetCommand {
         try {
             int id = Integer.parseInt(key);
             List<String> locations = CommandParser.getMessageLocations(id);
-            
+            System.out.println("GET " + key + " -> LOCAL'da yok, üyelerden aranıyor: " + locations);
+
             for (String location : locations) {
                 String[] parts = location.split(":");
                 String host = parts[0];
@@ -131,10 +133,10 @@ class GetCommand {
                     family.StoredMessage result = stub.retrieve(msgId);
                 
                     if (result != null && !result.getText().isEmpty()) {
-                        System.out.println("Mesaj üyeden bulundu: " + location);
+                        System.out.println("GET " + key + " -> REMOTE (" + location + ")");
                         return result.getText();
                     }                
-                    
+
                 } catch (Exception ex) {
                     System.out.println("Üye erişim hatası (" + location + "): " + ex.getMessage());
                 } finally {
