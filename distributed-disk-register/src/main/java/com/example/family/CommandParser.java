@@ -104,42 +104,48 @@ class GetCommand {
             //dosya yoksa üyelerden dene
         }
 
-        // Üyelerden gRPC ile oku
-        List<family.NodeInfo> members = CommandParser.getMembers();
-        for (family.NodeInfo member : members) {
-            if (member.getPort() == CommandParser.getSelfPort()) {
-                continue;
-            }
-            io.grpc.ManagedChannel channel = null;
-            try {
-                int id = Integer.parseInt(key);
-                family.MessageId msgId = family.MessageId.newBuilder()
-                        .setId(id)
-                        .build();
+        // Mesajı tutan üyelerden gRPC ile oku
+        try {
+            int id = Integer.parseInt(key);
+            List<String> locations = CommandParser.getMessageLocations(id);
+            
+            for (String location : locations) {
+                String[] parts = location.split(":");
+                String host = parts[0];
+                int memberPort = Integer.parseInt(parts[1]);
                 
-                channel = io.grpc.ManagedChannelBuilder
-                        .forAddress(member.getHost(), member.getPort())
-                        .usePlaintext()
-                        .build();
+                io.grpc.ManagedChannel channel = null;
+                try {
+                    family.MessageId msgId = family.MessageId.newBuilder()
+                            .setId(id)
+                            .build();
                 
-                family.StorageServiceGrpc.StorageServiceBlockingStub stub = 
-                        family.StorageServiceGrpc.newBlockingStub(channel);
+                    channel = io.grpc.ManagedChannelBuilder
+                            .forAddress(host, memberPort)
+                            .usePlaintext()
+                            .build();
                 
-                family.StoredMessage result = stub.retrieve(msgId);
+                    family.StorageServiceGrpc.StorageServiceBlockingStub stub = 
+                            family.StorageServiceGrpc.newBlockingStub(channel);
                 
-                if (result != null && !result.getText().isEmpty()) {
-                    System.out.println("Mesaj üyeden bulundu: " + member.getHost() + ":" + member.getPort());
-                    return result.getText();
-                }                
-            } catch (Exception ex) {
-                System.out.println("Üye erişim hatası: " + ex.getMessage());
-            } finally {
-                if (channel != null) {
-                    channel.shutdownNow();
+                    family.StoredMessage result = stub.retrieve(msgId);
+                
+                    if (result != null && !result.getText().isEmpty()) {
+                        System.out.println("Mesaj üyeden bulundu: " + location);
+                        return result.getText();
+                    }                
+                    
+                } catch (Exception ex) {
+                    System.out.println("Üye erişim hatası (" + location + "): " + ex.getMessage());
+                } finally {
+                    if (channel != null) {
+                        channel.shutdownNow();
+                    }
                 }
             }
-        }
-        
+        } catch (Exception e) {
+            System.out.println("GET hatası: " + e.getMessage());
+        }    
         return "NOT_FOUND";
     }
 }
