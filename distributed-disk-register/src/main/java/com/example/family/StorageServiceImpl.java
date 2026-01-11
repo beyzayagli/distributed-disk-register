@@ -34,6 +34,13 @@ public class StorageServiceImpl extends StorageServiceGrpc.StorageServiceImplBas
                 java.io.FileOutputStream fos = new java.io.FileOutputStream(filename);
                 fos.write(request.getText().getBytes());
                 fos.close();
+            } else if (ioMode.equals("ZEROCOPY")) {
+                java.io.RandomAccessFile raf = new java.io.RandomAccessFile(filename, "rw");
+                java.nio.channels.FileChannel channel = raf.getChannel();
+                java.nio.ByteBuffer buffer = java.nio.ByteBuffer.wrap(request.getText().getBytes());
+                channel.write(buffer);
+                channel.close();
+                raf.close();
             } else {
                 // BUFFERED (default)
                 java.io.FileWriter fw = new java.io.FileWriter(filename);
@@ -77,6 +84,15 @@ public class StorageServiceImpl extends StorageServiceGrpc.StorageServiceImplBas
                 byte[] data = fis.readAllBytes();
                 fis.close();
                 content = new String(data);
+            } else if (ioMode.equals("ZEROCOPY")) {
+                java.io.RandomAccessFile raf = new java.io.RandomAccessFile(filename, "r");
+                java.nio.channels.FileChannel channel = raf.getChannel();
+                java.nio.ByteBuffer buffer = java.nio.ByteBuffer.allocate((int) channel.size());
+                channel.read(buffer);
+                buffer.flip();
+                content = new String(buffer.array());
+                channel.close();
+                raf.close();
             } else {
                 // BUFFERED (default)
             java.io.BufferedReader br = new java.io.BufferedReader(
