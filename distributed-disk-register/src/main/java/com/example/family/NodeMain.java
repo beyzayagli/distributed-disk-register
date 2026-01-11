@@ -50,6 +50,10 @@ public class NodeMain {
 
                 System.out.printf("Node started on %s:%d%n", host, port);
 
+                // Config yükle ve göster
+                ToleranceConfig.getTolerance();
+                ToleranceConfig.getIoMode();
+
                 // Eğer bu ilk node ise (port 5555), TCP 6666'da text dinlesin
                 if (port == START_PORT) {
                     startLeaderTextListener(registry, self);
