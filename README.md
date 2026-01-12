@@ -6,9 +6,7 @@ Distributed-Disk-Registery (gRPC + TCP)
 
 # gRPC + Protobuf + TCP Hybrid Distributed Server
 
-Bu proje, birden fazla sunucunun dağıtık bir küme (“family”) oluşturduğu, **gRPC + Protobuf** ile kendi aralarında haberleştiği ve aynı zamanda **lider üye (cluster gateway)** üzerinden dış dünyadan gelen **TCP text mesajlarını** tüm üyelere broadcast ettiği hibrit bir mimari örneğidir.
-
-Sistem Programlama, Dağıtık Sistemler veya gRPC uygulama taslağı olarak kullanınız.
+Bu proje, birden fazla sunucunun dağıtık bir küme ("family") oluşturduğu, **gRPC + Protobuf** ile kendi aralarında haberleştiği ve **lider üye** üzerinden gelen **SET/GET komutlarıyla** mesajları tolerance değerine göre üyelere dağıtarak sakladığı bir **dağıtık disk kayıt sistemi** örneğidir.
 
 ---
 
