@@ -81,12 +81,14 @@ Her üye, düzenli olarak diğer aile üyeleri listesini ekrana basar:
 
 ```
 ======================================
-Family at 127.0.0.1:5557 (me)
+Family at 127.0.0.1:5555 (me)
 Time: 2025-11-13T21:05:00
 Members:
- - 127.0.0.1:5555
- - 127.0.0.1:5556
- - 127.0.0.1:5557 (me)
+ - 127.0.0.1:5555 (me)
+ - 127.0.0.1:5556 [1 msg]
+ - 127.0.0.1:5557 [1 msg]
+Local messages: 1
+Total tracked: 2
 ======================================
 ```
 
@@ -109,7 +111,6 @@ Health-check mekanizması ile kopan (offline) üyeler aile listesinden çıkarı
 distributed-disk-register/
 │
 ├── pom.xml
-├── README.md
 ├── tolerance.conf
 ├── src
 │   └── main
@@ -190,29 +191,13 @@ Yeni Üye, kendinden önceki portları gRPC ile yoklar:
 
 Lider Üye:
 
-* TCP 6666’dan text alır,
-* Protobuf `ChatMessage` nesnesine çevirir,
-* Tüm kardeş üyelere gRPC RPC gönderir.
+* TCP 6666'dan SET/GET komutları alır
+* `SET <id> <msg>`: Mesajı diske yazar, tolerance sayısı kadar üyeye gRPC ile dağıtır
+* `GET <id>`: Önce yerel diskten, yoksa diğer üyelerden gRPC ile getirir
 
 ###  3. Family Senkronizasyonu
 
-Her üye 10 saniyede bir kendi ailesini ekrana basar.
-
----
-
-##  Ödev / Bundan Sonra Yapılacaklar
-
-Öğrenciler:
-
-* Üye düşme tespiti (heartbeat)
-* Leader election
-* gRPC streaming ile real-time chat
-* Redis-backed cluster membership
-* Broadcast queue implementasyonu
-* TCP’den gelen mesajların loglanması
-* Çoklu lider senaryosu & conflict resolution
-
-gibi özellikler ekleyebilir.
+Her üye 10 saniyede bir aile listesini ve mesaj dağılımını ekrana basar.
 
 ---
 
