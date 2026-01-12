@@ -55,11 +55,23 @@ Her yeni Üye:
 Üyeler kendi aralarında sadece **protobuf message** ile haberleşir:
 
 ```proto
-message ChatMessage {
-  string text = 1;
-  string fromHost = 2;
-  int32 fromPort = 3;
-  int64 timestamp = 4;
+message StoredMessage {
+  int32 id = 1;
+  string text = 2;
+}
+
+message StoreResult {
+  bool success = 1;
+  string message = 2;
+}
+
+message MessageId {
+  int32 id = 1;
+}
+
+service StorageService {
+  rpc Store(StoredMessage) returns (StoreResult);
+  rpc Retrieve(MessageId) returns (StoredMessage);
 }
 ```
 
