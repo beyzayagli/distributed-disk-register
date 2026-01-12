@@ -151,7 +151,7 @@ Bu komut:
 
 Her bir terminal yeni bir üye demektir.
 
-### **Terminal 1 – Lider Üye**
+### **Üye başlatma**
 
 ```bash
 mvn exec:java -Dexec.mainClass=com.example.family.NodeMain
@@ -165,62 +165,12 @@ Leader listening for text on TCP 127.0.0.1:6666
 ...
 ```
 
-![Sistem Başlatma](https://github.com/ismailhakkituran/distributed-disk-register/blob/main/Distributed%20System%20Start-start.png)
+![Sistem Başlatma](https://github.com/beyzayagli/distributed-disk-register/blob/main/ddr-calistirma.png)
 
-
-### **Terminal 2, 3, 4… – Diğer Üyeler**
-
-Her yeni terminal:
-
-```bash
-mvn exec:java -Dexec.mainClass=com.example.family.NodeMain
-```
-
-Üyeler 5556, 5557, 5558… portlarını otomatik bulur
-ve aileye katılır.
-
----
-![Üyelerin aileye katılması](https://github.com/ismailhakkituran/distributed-disk-register/blob/main/Distributed%20System%20Start-family.png)
-
-## Mesaj Gönderme (TCP → Lider Üye)
-
-Lider Üye, dış dünyadan gelen text’i 6666 portunda bekler.
-
-Yeni bir terminal aç:
-
-```bash
-nc 127.0.0.1 6666
-```
-
-Veya:
-
-```bash
-telnet 127.0.0.1 6666
-```
-
-Mesaj yaz:
-
-```
-Merhaba distributed world!
-```
-
-![Sistem Başlatma](https://github.com/ismailhakkituran/distributed-disk-register/blob/main/Distributed%20System%20Start-telnet.png)
 
 ###  Sonuç
 
-Bu mesaj protobuf mesajına çevrilip tüm üyelere gider.
-
----
-
-### Diğer Üyelerdeki örnek çıktı:
-
-```
-💬 Incoming message:
-  From: 127.0.0.1:5555
-  Text: Merhaba distributed world!
-  Timestamp: 1731512345678
---------------------------------------
-```
+Bu mesaj protobuf mesajına çevrilip round robin ile seçilen üyelere gider ve üyeler mesajları kaydeder.
 
 ---
 
