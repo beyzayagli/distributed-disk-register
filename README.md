@@ -14,6 +14,28 @@ Sistem Programlama, Dağıtık Sistemler veya gRPC uygulama taslağı olarak kul
 
 ##  Özellikler
 
+### ✔ SET/GET Komutları ile Dağıtık Mesaj Saklama
+
+Lider üye TCP üzerinden SET/GET komutları alır:
+
+* `SET <id> <msg>`: Mesajı diske kaydeder ve tolerance sayısı kadar üyeye dağıtır
+* `GET <id>`: Önce yerel diskten, yoksa diğer üyelerden mesajı getirir
+
+### ✔ Tolerance Tabanlı Replikasyon
+
+`tolerance.conf` dosyasından okunan değere göre mesajlar birden fazla üyeye kopyalanır:
+
+* Round-robin üye seçimi ile dengeli dağılım
+* Mesaj lokasyon takibi (`Map<Integer, List<MemberId>>`)
+
+### ✔ Çoklu IO Modu Desteği
+
+`tolerance.conf` içinde `IO_MODE` ayarı ile:
+
+* **BUFFERED**: BufferedWriter/BufferedReader (varsayılan)
+* **UNBUFFERED**: FileOutputStream/FileInputStream
+* **ZEROCOPY**: FileChannel ile NIO
+
 ### ✔ Otomatik Dağıtık Üye Keşfi
 
 Her yeni Üye:
@@ -58,6 +80,13 @@ Members:
 ======================================
 ```
 
+### ✔ Periyodik Rapor Sistemi
+
+Her üye 10 saniyede bir:
+
+* Aile üyelerini ve mesaj sayılarını ekrana basar
+* Lider, toplam mesaj dağılımını gösterir
+
 ### ✔ Üye Düşmesi (Failover)
 
 Health-check mekanizması ile kopan (offline) üyeler aile listesinden çıkarılır.
@@ -71,12 +100,16 @@ distributed-disk-register/
 │
 ├── pom.xml
 ├── README.md
+├── tolerance.conf
 ├── src
 │   └── main
 │       ├── java/com/example/family/
 │       │       ├── NodeMain.java
 │       │       ├── NodeRegistry.java
-│       │       └── FamilyServiceImpl.java
+│       │       ├── FamilyServiceImpl.java
+│       │       ├── StorageServiceImpl.java
+│       │       ├── CommandParser.java
+│       │       └── ToleranceConfig.java
 │       │
 │       └── proto/
 │               └── family.proto
